@@ -15,12 +15,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer{
 //We implement WebSocketMessageBrokerConfigurer interface and provide implementation for some of its methods
 
     @Override
-    //We register a webSocket endpoint that clients will use to connect to our websocket server
+    //We register a webSocket endpoint that clients will use to connect to our webSocket server
     //STOMP in the method name refers to Spring Framework STOMP implementation
     //STOMP - Simple Text Oriented Messaging Protocol
     public void registerStompEndpoints(StompEndpointRegistry registry){
 
-        //withSockJS() - used to enable fallback options for browser that don't support webscket
+        //withSockJS() - used to enable fallback options for browser that don't support webSocket
         registry.addEndpoint("/ws").withSockJS();
     }
 
