@@ -1,6 +1,13 @@
 # WebSocket-Chat-SpringBoot
 A WebSocket Chat Application using SpringBoot Framework
 
+# Pre-Requisites for the project
+IDE: Apache NetBeans 12.6
+JDK: Temurin 17 JDK
+Tools: Apache Maven
+Platform: Windows 10
+Git Client: GitHub Desktop
+
 # Instructions to Run the Project
 
 This section contains of two subsections:
@@ -54,7 +61,7 @@ This section contains of two subsections:
 
     ![clean](/Images/Installation/Clean.jpeg)
 
-3. Now, the Project will search for errors and rectifies them. In the same flow, the maven will look for the required dependencies in the project and downloads them for us, if required. Please refer to the image below.
+3. Now, the Project will search for errors and rectifies them. In the same flow, the maven will look for the required dependencies in the project and downloads them for us, if required.
 
 4. Now, select the Main Class 'WebSocketChatApplication.java' and right click on whitespace and click run.
 Please refer to the image below.
