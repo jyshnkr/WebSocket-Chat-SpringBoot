@@ -52,9 +52,9 @@ This section contains of two subsections:
 
 2. Now, click on the 'Run' menu of top navigation bar and select 'Clean and Build Project'
 
-3. Now, the Project will search for errors and rectifies them. In the same flow, the maven will look for the required dependencies in the project and downloads them for us, if required. Please refer to the image below.
-
     ![clean](/Images/Installation/Clean.jpeg)
+
+3. Now, the Project will search for errors and rectifies them. In the same flow, the maven will look for the required dependencies in the project and downloads them for us, if required. Please refer to the image below.
 
 4. Now, select the Main Class 'WebSocketChatApplication.java' and right click on whitespace and click run.
 Please refer to the image below.
@@ -63,8 +63,8 @@ Please refer to the image below.
 
 5. Check the console/terminal below for the Status. It will show project 'BUILD SUCCESS' and the 'Server started at localhost 6369'.
 
-6. Now, open a browser and type 'localhost:6369' and the webpage will look like this. please refer to the image below.
-
     ![localhost](/Images/Installation/localHost.jpeg)
+
+6. Now, open a browser and type 'localhost:6369' and the webpage will look like this. please refer to the image below.
 
     ![chatWindow](/Images/Installation/chatPage.jpeg)
