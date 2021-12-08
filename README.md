@@ -39,11 +39,24 @@ This section contains of two subsections:
 
 5. Now, download the project from GitHub as zip folder or clone down the project or extract the project downloaded from canvas [WebSocketChat-SpringBoot](https://github.com/jyshnkr/WebSocket-Chat-SpringBoot)
 
-6. Open the NetBeans, in the File option of Top navigation bar, select the 'Open project' as select the downloaded Project.
+6. Open the NetBeans. In the File option of Top navigation bar, select the 'Open project' and select the downloaded Project.
 
 7. Before proceeding to run the application, please make sure you followed all the Instructions mentioned above.
 
 #### B)Run the project
 
 1. Open the project in netbeans and navigate to the Main class of the project i.e., **WebSocketChatApplication.java**
-(Project > Source Packages > com.ADPFProject.SpringBoot.WebSocketChatApplication > WebSocketChatApplication.java)
+(Project > Source Packages > com.ADPFProject.SpringBoot.WebSocketChatApplication > WebSocketChatApplication.java). Please refer to the image below.
+
+    ![Main](/Images/Installation/mainClass.jpeg)
+
+2. Now, click on the 'Run' menu of top navigation bar and select 'Clean and Build Project'
+
+    ![clean](/Images/Installation/Clean.jpeg)
+
+3. Now, the Project will search for errors and rectifies them. In the same flow, the maven will look for the required dependencies in the project and downloads them for us, if required. Please refer to the image below.
+
+4. Now, select the Main Class 'WebSocketChatApplication.java' and right click on whitespace and click run.
+Please refer to the image below.
+
+    ![run](/Images/Installation/run.jpeg)
