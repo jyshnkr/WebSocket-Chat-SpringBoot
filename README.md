@@ -35,4 +35,4 @@ This section contains of two subsections:
 
     ![PluginInstallation](/Images/Installation/Springboot.jpeg)
 
-    ![SBootInstallation](SpringBootPluginInstallation.jpeg)
+    ![SpringBootPluginInstallation](SpringBootPluginInstallation.jpeg)
