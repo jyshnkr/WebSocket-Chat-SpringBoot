@@ -18,3 +18,11 @@ This section contains of two subsections:
     b) After installation is Done, make sure the Path is set in System Environment variables ( Press Windows + E and Right click on white space and click 'properties' in context menu. In the control panel, click on Advanced system settings on left side and click on Environment Variables in popup menu ). Please refer to the image below.
 
     ![JDKPath3](/Images/Installation/JDKtoPATH3.jpeg)
+
+3. Install [Apache Maven](https://maven.apache.org/download.cgi) on your system. Make sure to download the file that ends with *.zip*. Please refer to the image below. After download, extract the zipped folder into desired location.
+
+    ![Apache Maven Download](/Images/Installation/MavenDownload.jpeg)
+
+   a) Now, navigate to the bin folder of the extracted apache maven folder. Click on Path navigator in windows explorer (looks like URL bar in browser). Select the Path highlighted in Blue color. Copy it. Please refer to the image below.
+
+    ![MavenPathSelection](/Images/Installation/MavenPathHighlighted.jpeg)
