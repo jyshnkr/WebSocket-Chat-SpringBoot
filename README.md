@@ -30,3 +30,9 @@ This section contains of two subsections:
    b) To make sure everything is good, navigate to the System environment variables as we did earlier in JDK Path and add the Path copied in the above step and paste it in 'Path' in both User variables and System variables. Please refer to the Image below.
 
     ![MavenToPath](/Images/Installation/MAVENtoPATH.jpeg)
+
+4. We're done with Installations. Now, open the Apache NetBeans 12.6 on your system. On the top navigation bar, click on 'Tools' and select 'plugins' and now select 'available plugins' and in the search bar - type 'nb-springboot'. From the results, click on the 'nb-springboot' checkbox and click on install. [If you face any issues while installing plugins like 'Proxy connection issues'. Please click on the proxy settings popped by netbeans and click on 'No Proxy' and retry. If the problem persists, restart the NetBeans and navigate to plugins and install 'nb-springboot' plugin. It shall work now.]. After installing the 'nb-springboot' plugin, netbeans prompts with restart options. Click on restart now. Please refer to the image below.
+
+    ![PluginInstallation](/Images/Installation/Springboot.jpeg)
+
+    ![SBootInstallation](SpringBootPluginInstallation.jpeg)
