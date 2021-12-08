@@ -36,3 +36,14 @@ This section contains of two subsections:
     ![PluginInstallation](/Images/Installation/Springboot.jpeg)
 
     ![SpringBootPluginInstallation](/Images/Installation/SpringBootPluginInstallation.jpeg)
+
+5. Now, download the project from GitHub as zip folder or clone down the project or extract the project downloaded from canvas [WebSocketChat-SpringBoot](https://github.com/jyshnkr/WebSocket-Chat-SpringBoot)
+
+6. Open the NetBeans, in the File option of Top navigation bar, select the 'Open project' as select the downloaded Project.
+
+7. Before proceeding to run the application, please make sure you followed all the Instructions mentioned above.
+
+#### B)Run the project
+
+1. Open the project in netbeans and navigate to the Main class of the project i.e., **WebSocketChatApplication.java**
+(Project > Source Packages > com.ADPFProject.SpringBoot.WebSocketChatApplication > WebSocketChatApplication.java)
