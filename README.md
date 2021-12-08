@@ -2,11 +2,11 @@
 A WebSocket Chat Application using SpringBoot Framework
 
 # Pre-Requisites for the project
-IDE: Apache NetBeans 12.6
-JDK: Temurin 17 JDK
-Tools: Apache Maven
-Platform: Windows 10
-Git Client: GitHub Desktop
+* IDE: Apache NetBeans 12.6
+* JDK: Temurin 17 JDK
+* Tools: Apache Maven
+* Platform: Windows 10
+* Git Client: GitHub Desktop
 
 # Instructions to Run the Project
 
