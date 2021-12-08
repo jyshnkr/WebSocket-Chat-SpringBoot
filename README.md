@@ -29,4 +29,4 @@ This section contains of two subsections:
 
    b) To make sure everything is good, navigate to the System environment variables as we did earlier in JDK Path and add the Path copied in the above step and paste it in 'Path' in both User variables and System variables. Please refer to the Image below.
 
-    ![MavenAddToPath](/Images/Installation/MAVENtoPATH.jpeg)
+    ![MavenToPath](/Images/Installation/MAVENtoPATH.jpeg)
