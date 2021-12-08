@@ -26,3 +26,7 @@ This section contains of two subsections:
    a) Now, navigate to the bin folder of the extracted apache maven folder. Click on Path navigator in windows explorer (looks like URL bar in browser). Select the Path highlighted in Blue color. Copy it. Please refer to the image below.
 
     ![MavenPathSelection](/Images/Installation/MavenPathHighlighted.jpeg)
+
+   b) To make sure everything is good, navigate to the System environment variables as we did earlier in JDK Path and add the Path copied in the above step and paste it in 'Path' in both User variables and System variables. Please refer to the Image below.
+
+   ![MavenAddToPath](/Images/Installation/MaventoPATH.jpeg)
