@@ -68,7 +68,7 @@ Please refer to the image below.
 
     ![run](/Images/Installation/run.jpeg)
 
-5. Check the console/terminal below for the Status. It will show project 'BUILD SUCCESS' and the 'Server started at localhost 6369'.
+5. Check the console/terminal below for the Status. It will show project 'BUILD SUCCESS' and the 'Server started at localhost 6369'. Please Stop TomCat Server, if you already have one installed and running in your system. This will override my custom server port 6369.
 
     ![localhost](/Images/Installation/localHost.jpeg)
 
