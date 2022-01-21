@@ -1,5 +1,5 @@
 # WebSocket-Chat-SpringBoot
-A WebSocket Chat Application using SpringBoot Framework
+WebSocket Chat is an Online Group chat application built using WebSocket API/Protocol in SpringBoot framework. This Application will let the users chat with others.
 
 # Pre-Requisites for the project
 * IDE: Apache NetBeans 12.6
