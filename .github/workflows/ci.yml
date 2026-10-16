@@ -14,9 +14,9 @@ jobs:
       run:
         working-directory: WebSocket-Chat-Application
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -25,6 +25,25 @@ jobs:
 
       - name: Build and test
         run: mvn -B -ntp verify
+
+      - name: Report test results
+        if: always()
+        run: |
+          shopt -s nullglob
+          reports=(target/surefire-reports/TEST-*.xml)
+          if [ ${#reports[@]} -eq 0 ]; then echo "::warning title=Tests::No test reports found"; exit 0; fi
+          python3 - "${reports[@]}" <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+          totals = [0, 0, 0, 0]
+          for path in sys.argv[1:]:
+              suite = ET.parse(path).getroot()
+              counts = [int(suite.get(k, 0)) for k in ("tests", "failures", "errors", "skipped")]
+              totals = [a + b for a, b in zip(totals, counts)]
+              name = suite.get("name").rsplit(".", 1)[-1]
+              print(f"::notice title={name}::{counts[0]} tests, {counts[1]} failures, {counts[2]} errors")
+          print(f"::notice title=Total::{totals[0]} tests, {totals[1]} failures, {totals[2]} errors, {totals[3]} skipped")
+          PY
 
       - name: Upload test reports
         if: failure()
