@@ -296,3 +296,12 @@ button.accent {
         font-size: 1.1em;
     }
 }
+.auth-error {
+    color: #ff5652;
+    font-size: 14px;
+    margin: 0 0 15px;
+}
+
+.username-page-container .username-submit + .username-submit {
+    margin-left: 10px;
+}
