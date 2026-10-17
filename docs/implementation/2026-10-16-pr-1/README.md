@@ -39,6 +39,14 @@ All three comments were still relevant at the reviewed head. They are addressed 
 
 Tests use a controllable clock and scheduler for exact/racy boundaries; real transports also test actual scheduled idle closure. The original 17 tests remain included. Tests cannot recall bytes already sent before a deadline, establish production capacity, or substitute for a deployment security review.
 
+### Publication follow-up: close/send ordering
+
+The [first hosted PR run](https://github.com/jyshnkr/WebSocket-Chat-SpringBoot/actions/runs/39041712352) passed Java 21 and browser checks, but Java 17 exposed a test-ordering assumption: the server had already closed an expired connection when the test attempted its next send. Spring's client then throws `IllegalStateException("Connection closed")` before sending, consistent with its [connection-state check](https://github.com/spring-projects/spring-framework/blob/v6.2.19/spring-messaging/src/main/java/org/springframework/messaging/simp/stomp/DefaultStompSession.java#L282-L293).
+
+This was reproduced locally for both native WebSocket and HTTP SockJS by triggering server-side expiry and awaiting closure before the send attempt. The test now accepts that exact exception only when the client is disconnected; other HTTP failures must still be `410 Gone`. Immediate-send cases, observed closure, healthy-peer delivery and expired-message isolation remain checked. The two additional ordering cases raise the Java total from 65 to 67. This follow-up changes tests only, not production security behavior; an independent review found no material issue in the correction. The table above preserves the original pre-publication evidence; current CI is linked at the top.
+
+Follow-up local verification: all **67 tests passed** with no failures, errors or skips; `./mvnw -B -ntp clean verify` completed in 22.760 seconds on Java 21.0.12.1.
+
 Initial red tests reproduced missing-expiry acceptance, a socket remaining open beyond expiry, Unicode passwords reaching BCrypt and failing, reconnect overtaking LEAVE publication, and missing direct JOIN publication at the new coordinator boundary. These were fixed before the corresponding green runs.
 
 ### Issues found during independent review

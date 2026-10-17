@@ -1,7 +1,7 @@
 package com.ADPFProject.SpringBoot.WebSocketChatApplication;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.fail;
 
 import java.lang.reflect.Type;
@@ -29,6 +29,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -160,18 +161,29 @@ class SessionExpiryTransportTests {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void expiredSenderCannotPublishButHealthyPeerCan(boolean httpFallback) throws Exception {
+    @CsvSource({"false, false", "false, true", "true, false", "true, true"})
+    void expiredSenderCannotPublishButHealthyPeerCan(boolean httpFallback, boolean awaitClosureBeforeSend)
+            throws Exception {
         Peer expiring = connect("expiring-sender", START.plusSeconds(60), httpFallback);
         Peer healthy = connect("healthy-sender", START.plusSeconds(3600), httpFallback);
         subscribe(expiring);
         subscribe(healthy);
         clock.set(DEADLINE);
 
-        assertExpiredFrameRejected(httpFallback, () -> expiring.session.send("/app/chat.sendMessage",
+        if (awaitClosureBeforeSend) {
+            healthy.session.send("/app/chat.sendMessage",
+                    ChatMessage.of(MessageType.CHAT, "forged", "trigger-expiry"));
+            assertThat(awaitChat(healthy, "trigger-expiry").getSender()).isEqualTo("healthy-sender");
+            assertThat(expiring.closed.poll(5, TimeUnit.SECONDS)).isNotNull();
+        }
+
+        assertExpiredFrameRejected(expiring.session, httpFallback, () -> expiring.session.send("/app/chat.sendMessage",
                 ChatMessage.of(MessageType.CHAT, "forged", "expired-send")));
 
-        assertThat(expiring.closed.poll(5, TimeUnit.SECONDS)).isNotNull();
+        if (!awaitClosureBeforeSend) {
+            assertThat(expiring.closed.poll(5, TimeUnit.SECONDS)).isNotNull();
+        }
+        assertThat(expiring.session.isConnected()).isFalse();
         healthy.session.send("/app/chat.sendMessage", ChatMessage.of(MessageType.CHAT, "forged", "healthy-send"));
         assertThat(awaitChat(healthy, "healthy-send").getSender()).isEqualTo("healthy-sender");
         assertThat(healthy.messages).noneMatch(message -> "expired-send".equals(message.getContent()));
@@ -183,18 +195,23 @@ class SessionExpiryTransportTests {
         Peer expiring = connect("expiring-subscription", START.plusSeconds(60), httpFallback);
         clock.set(DEADLINE);
 
-        assertExpiredFrameRejected(httpFallback, () -> expiring.session.subscribe("/topic/public", expiring));
+        assertExpiredFrameRejected(expiring.session, httpFallback,
+                () -> expiring.session.subscribe("/topic/public", expiring));
 
         assertThat(expiring.closed.poll(5, TimeUnit.SECONDS)).isNotNull();
         assertThat(expiring.session.isConnected()).isFalse();
     }
 
-    private void assertExpiredFrameRejected(boolean httpFallback, Runnable send) {
-        if (httpFallback) {
-            assertThatThrownBy(send::run).isInstanceOf(MessageDeliveryException.class)
+    private void assertExpiredFrameRejected(StompSession session, boolean httpFallback, Runnable send) {
+        Throwable rejection = catchThrowable(send::run);
+        if (rejection instanceof IllegalStateException) {
+            assertThat(rejection).hasMessage("Connection closed");
+            assertThat(session.isConnected()).isFalse();
+        } else if (httpFallback) {
+            assertThat(rejection).isInstanceOf(MessageDeliveryException.class)
                     .hasCauseInstanceOf(HttpClientErrorException.Gone.class);
         } else {
-            send.run();
+            assertThat(rejection).isNull();
         }
     }
 
