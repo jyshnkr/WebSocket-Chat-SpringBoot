@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['17', '21']
+    defaults:
+      run:
+        working-directory: WebSocket-Chat-Application
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+          cache-dependency-path: WebSocket-Chat-Application/pom.xml
+
+      - name: Build and test
+        run: ./mvnw -B -ntp verify
+
+      - name: Report test results
+        if: always()
+        run: |
+          shopt -s nullglob
+          reports=(target/surefire-reports/TEST-*.xml)
+          if [ ${#reports[@]} -eq 0 ]; then echo "::warning title=Tests::No test reports found"; exit 0; fi
+          python3 - "${reports[@]}" <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+          totals = [0, 0, 0, 0]
+          for path in sys.argv[1:]:
+              suite = ET.parse(path).getroot()
+              counts = [int(suite.get(k, 0)) for k in ("tests", "failures", "errors", "skipped")]
+              totals = [a + b for a, b in zip(totals, counts)]
+              name = suite.get("name").rsplit(".", 1)[-1]
+              print(f"::notice title={name}::{counts[0]} tests, {counts[1]} failures, {counts[2]} errors")
+          print(f"::notice title=Total::{totals[0]} tests, {totals[1]} failures, {totals[2]} errors, {totals[3]} skipped")
+          PY
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports-java-${{ matrix.java }}
+          path: WebSocket-Chat-Application/target/surefire-reports/
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: WebSocket-Chat-Application/pom.xml
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install pinned browser dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Test browser lifecycle
+        run: npm run test:unit
+
+      - name: Install Chromium
+        run: npx --no-install playwright install --with-deps chromium
+
+      - name: Package application
+        working-directory: WebSocket-Chat-Application
+        run: ./mvnw -B -ntp -DskipTests package
+
+      - name: Test real browser flows
+        run: npm run test:e2e
+
+      - name: Upload browser failure traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-failure-traces
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7

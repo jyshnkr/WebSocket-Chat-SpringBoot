@@ -1,41 +1,44 @@
 package com.ADPFProject.SpringBoot.WebSocketChatApplication.controller;
 
-import com.ADPFProject.SpringBoot.WebSocketChatApplication.model.ChatMessage;
+import java.security.Principal;
+
+import com.ADPFProject.SpringBoot.WebSocketChatApplication.presence.ActiveUserRegistry;
+import com.ADPFProject.SpringBoot.WebSocketChatApplication.security.WebSocketSessionLifetime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
-import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
+@Component
 public class WebSocketEventListener {
 
     private static final Logger logger = LoggerFactory.getLogger(WebSocketEventListener.class);
 
-    @Autowired
-    private SimpMessageSendingOperations messagingTemplate;
+    private final ActiveUserRegistry activeUsers;
+    private final WebSocketSessionLifetime lifetime;
 
-    @EventListener
-    public void handleWebSocketConnectListener(SessionConnectedEvent event){
-        logger.info("Received a new Web Socket Connection");
+    public WebSocketEventListener(ActiveUserRegistry activeUsers, WebSocketSessionLifetime lifetime) {
+        this.activeUsers = activeUsers;
+        this.lifetime = lifetime;
     }
 
     @EventListener
-    public void handleWebSocketDisconnectListener(SessionDisconnectEvent event){
-        StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
-
-        String username = (String) headerAccessor.getSessionAttributes().get("username");
-        if(username != null){
-            logger.info("User Disconnected: " + username);
-
-            ChatMessage chatMessage = new ChatMessage();
-            chatMessage.setType(ChatMessage.MessageType.LEAVE);
-            chatMessage.setSender(username);
-
-            messagingTemplate.convertAndSend("/topic/public", chatMessage);
+    public void handleWebSocketConnectListener(SessionConnectedEvent event) {
+        Principal user = event.getUser();
+        String sessionId = StompHeaderAccessor.wrap(event.getMessage()).getSessionId();
+        if (user != null && sessionId != null) {
+            activeUsers.connected(sessionId, user.getName(), () -> lifetime.isActive(sessionId));
+            logger.info("WebSocket session connected for user {}", user.getName());
         }
+    }
+
+    @EventListener
+    public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
+        lifetime.disconnected(event.getSessionId());
+        activeUsers.disconnected(event.getSessionId());
     }
 
 }

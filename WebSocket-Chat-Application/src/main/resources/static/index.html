@@ -14,13 +14,19 @@
 
 <div id="username-page">
     <div class="username-page-container">
-        <h1 class="title">Type Your Username</h1>
-        <form id="usernameForm" name="usernameForm">
+        <h1 class="title">Sign In to Chat</h1>
+        <form id="usernameForm" name="usernameForm" novalidate>
             <div class="form-group">
-                <input type="text" id="name" placeholder="Username" autocomplete="off" class="form-control" />
+                <input type="text" id="name" placeholder="Username" autocomplete="username" maxlength="20" class="form-control" />
             </div>
             <div class="form-group">
-                <button type="Submit" class="accent username-submit">Start Chatting</button>
+                <input type="password" id="password" placeholder="Password" autocomplete="current-password" minlength="8" maxlength="72" aria-describedby="password-help" class="form-control" />
+                <p id="password-help">At least 8 characters; at most 72 UTF-8 bytes.</p>
+            </div>
+            <p id="auth-error" class="auth-error hidden" role="alert"></p>
+            <div class="form-group">
+                <button type="submit" class="accent username-submit">Sign In</button>
+                <button type="button" id="register" class="default username-submit">Create Account</button>
             </div>
         </form>
     </div>
@@ -40,8 +46,8 @@
         <form id="messageForm" name="messageForm">
             <div class="form-group">
                 <div class="input-group clearfix">
-                    <input type="text" id="message" placeholder="Type a Message.." autocomplete="off" class="form-control"/>
-                    <button type="submit" class="primary">Send</button>
+                    <input type="text" id="message" placeholder="Type a Message.." autocomplete="off" maxlength="1000" class="form-control"/>
+                    <button type="submit" class="primary" disabled>Send</button>
                 </div>
             </div>
         </form>

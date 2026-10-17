@@ -11,6 +11,14 @@ public class ChatMessage {
         LEAVE
     }
 
+    public static ChatMessage of(MessageType type, String sender, String content) {
+        ChatMessage message = new ChatMessage();
+        message.setType(type);
+        message.setSender(sender);
+        message.setContent(content);
+        return message;
+    }
+
     public MessageType getType() {
         return type;
     }
