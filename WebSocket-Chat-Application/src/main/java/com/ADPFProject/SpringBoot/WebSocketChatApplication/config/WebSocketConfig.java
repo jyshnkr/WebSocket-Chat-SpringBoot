@@ -1,12 +1,15 @@
 package com.ADPFProject.SpringBoot.WebSocketChatApplication.config;
 
 import com.ADPFProject.SpringBoot.WebSocketChatApplication.security.JwtChannelInterceptor;
+import com.ADPFProject.SpringBoot.WebSocketChatApplication.security.SessionDeadlineInterceptor;
+import com.ADPFProject.SpringBoot.WebSocketChatApplication.security.WebSocketSessionLifetime;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 
 @Configuration
 //Indicates that it is a Spring Configuration Class
@@ -19,9 +22,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 //We implement WebSocketMessageBrokerConfigurer interface and provide implementation for some of its methods
 
     private final JwtChannelInterceptor jwtChannelInterceptor;
+    private final SessionDeadlineInterceptor deadlines;
+    private final WebSocketSessionLifetime lifetime;
 
-    public WebSocketConfig(JwtChannelInterceptor jwtChannelInterceptor) {
+    public WebSocketConfig(JwtChannelInterceptor jwtChannelInterceptor, SessionDeadlineInterceptor deadlines,
+                           WebSocketSessionLifetime lifetime) {
         this.jwtChannelInterceptor = jwtChannelInterceptor;
+        this.deadlines = deadlines;
+        this.lifetime = lifetime;
     }
 
     @Override
@@ -47,11 +55,22 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
         //Messages whose destination starts with "/topic" should be routed to message broker
         registry.enableSimpleBroker("/topic");
+        registry.setPreservePublishOrder(true);
     }
 
     @Override
     //Every inbound STOMP frame passes through the JWT interceptor (authentication + destination checks)
     public void configureClientInboundChannel(ChannelRegistration registration) {
-        registration.interceptors(jwtChannelInterceptor);
+        registration.interceptors(jwtChannelInterceptor, deadlines);
+    }
+
+    @Override
+    public void configureClientOutboundChannel(ChannelRegistration registration) {
+        registration.interceptors(deadlines);
+    }
+
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+        registration.addDecoratorFactory(lifetime::decorate);
     }
 }

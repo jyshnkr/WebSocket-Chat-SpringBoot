@@ -1,5 +1,6 @@
 package com.ADPFProject.SpringBoot.WebSocketChatApplication.security;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 
@@ -25,14 +26,16 @@ public class TokenService {
 
     private final JwtEncoder jwtEncoder;
     private final JwtProperties properties;
+    private final Clock clock;
 
-    public TokenService(JwtEncoder jwtEncoder, JwtProperties properties) {
+    public TokenService(JwtEncoder jwtEncoder, JwtProperties properties, Clock clock) {
         this.jwtEncoder = jwtEncoder;
         this.properties = properties;
+        this.clock = clock;
     }
 
     public IssuedToken issue(Authentication authentication) {
-        Instant now = Instant.now();
+        Instant now = clock.instant();
         List<String> roles = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .filter(authority -> authority.startsWith(ROLE_PREFIX))

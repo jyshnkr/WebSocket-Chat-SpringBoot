@@ -10,8 +10,8 @@ public record RegisterRequest(
                 message = "must be 3-20 characters using letters, digits, '.', '_' or '-'")
         String username,
 
-        // BCrypt only uses the first 72 bytes of a password.
         @NotBlank
-        @Size(min = 8, max = 72, message = "must be 8-72 characters")
+        @Size(min = 8, message = "must be at least 8 characters")
+        @MaxUtf8Bytes(72)
         String password) {
 }

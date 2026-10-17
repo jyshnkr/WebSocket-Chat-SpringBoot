@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 import java.lang.reflect.Type;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -17,6 +18,8 @@ import com.ADPFProject.SpringBoot.WebSocketChatApplication.security.TokenService
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -35,9 +38,16 @@ import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
+import org.springframework.web.socket.sockjs.client.RestTemplateXhrTransport;
+import org.springframework.web.socket.sockjs.client.SockJsClient;
 
 /**
  * End-to-end checks of the STOMP security rules against a running server.
@@ -52,6 +62,9 @@ class ChatWebSocketSecurityTests {
 
     @Autowired
     private TokenService tokenService;
+
+    @Autowired
+    private JwtEncoder jwtEncoder;
 
     @Autowired
     private TestRestTemplate rest;
@@ -86,6 +99,39 @@ class ChatWebSocketSecurityTests {
         RecordingSessionHandler handler = new RecordingSessionHandler();
 
         stompClient.connectAsync(url(), new WebSocketHttpHeaders(), bearer("not-a-real-token"), handler);
+
+        assertThat(handler.errors.poll(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isEqualTo("Unauthorized");
+        assertThat(handler.connected.get()).isFalse();
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void expiredIdleSessionIsClosed(boolean httpFallback) throws Exception {
+        String endpoint = url();
+        if (httpFallback) {
+            stompClient.stop();
+            stompClient = new WebSocketStompClient(new SockJsClient(List.of(new RestTemplateXhrTransport())));
+            endpoint = "http://localhost:" + port + "/ws";
+        }
+        Instant now = Instant.now();
+        JwtClaimsSet claims = JwtClaimsSet.builder().issuer("websocket-chat").subject("short-lived")
+                .issuedAt(now.minusSeconds(120)).expiresAt(now.minusSeconds(55))
+                .claim("roles", List.of("USER")).build();
+        String token = jwtEncoder.encode(JwtEncoderParameters.from(
+                JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
+        RecordingSessionHandler handler = new RecordingSessionHandler();
+        StompSession session = stompClient.connectAsync(
+                endpoint, new WebSocketHttpHeaders(), bearer(token), handler).get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+        assertThat(handler.errors.poll(8, TimeUnit.SECONDS)).startsWith("transport-error:");
+        assertThat(session.isConnected()).isFalse();
+    }
+
+    @Test
+    void connectWithBlankBearerTokenIsUnauthorized() throws Exception {
+        RecordingSessionHandler handler = new RecordingSessionHandler();
+
+        stompClient.connectAsync(url(), new WebSocketHttpHeaders(), bearer("   "), handler);
 
         assertThat(handler.errors.poll(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isEqualTo("Unauthorized");
         assertThat(handler.connected.get()).isFalse();

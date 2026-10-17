@@ -1,10 +1,12 @@
 package com.ADPFProject.SpringBoot.WebSocketChatApplication.presence;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BooleanSupplier;
 
+import com.ADPFProject.SpringBoot.WebSocketChatApplication.model.ChatMessage;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Component;
 
 /**
@@ -13,21 +15,34 @@ import org.springframework.stereotype.Component;
 @Component
 public class ActiveUserRegistry {
 
-    private final Map<String, String> usernamesBySessionId = new ConcurrentHashMap<>();
+    private final Map<String, String> usernamesBySessionId = new HashMap<>();
+    private final SimpMessageSendingOperations publisher;
 
-    public void add(String sessionId, String username) {
-        usernamesBySessionId.put(sessionId, username);
+    public ActiveUserRegistry(SimpMessageSendingOperations publisher) {
+        this.publisher = publisher;
     }
 
-    public Optional<String> remove(String sessionId) {
-        return Optional.ofNullable(usernamesBySessionId.remove(sessionId));
+    public synchronized void connected(String sessionId, String username, BooleanSupplier sessionIsActive) {
+        if (sessionIsActive.getAsBoolean()) {
+            usernamesBySessionId.put(sessionId, username);
+        }
     }
 
-    public boolean isOnline(String username) {
-        return usernamesBySessionId.containsValue(username);
+    public synchronized void disconnected(String sessionId) {
+        String username = usernamesBySessionId.remove(sessionId);
+        if (username != null && !usernamesBySessionId.containsValue(username)) {
+            publisher.convertAndSend("/topic/public", ChatMessage.of(ChatMessage.MessageType.LEAVE, username, null));
+        }
     }
 
-    public List<String> usernames() {
+    public synchronized void join(String sessionId, String username, BooleanSupplier sessionIsActive) {
+        if (sessionIsActive.getAsBoolean()) {
+            usernamesBySessionId.putIfAbsent(sessionId, username);
+            publisher.convertAndSend("/topic/public", ChatMessage.of(ChatMessage.MessageType.JOIN, username, null));
+        }
+    }
+
+    public synchronized List<String> usernames() {
         return usernamesBySessionId.values().stream().distinct().sorted().toList();
     }
 }

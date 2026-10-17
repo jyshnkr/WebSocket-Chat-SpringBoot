@@ -17,6 +17,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthenticationToken;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 
 /**
@@ -37,11 +38,14 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final AuthenticationProvider jwtAuthenticationProvider;
+    private final WebSocketSessionLifetime lifetime;
 
-    public JwtChannelInterceptor(JwtDecoder jwtDecoder, JwtAuthenticationConverter jwtAuthenticationConverter) {
+    public JwtChannelInterceptor(JwtDecoder jwtDecoder, JwtAuthenticationConverter jwtAuthenticationConverter,
+                                 WebSocketSessionLifetime lifetime) {
         JwtAuthenticationProvider provider = new JwtAuthenticationProvider(jwtDecoder);
         provider.setJwtAuthenticationConverter(jwtAuthenticationConverter);
         this.jwtAuthenticationProvider = provider;
+        this.lifetime = lifetime;
     }
 
     @Override
@@ -52,7 +56,11 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
         }
         StompCommand command = accessor.getCommand();
         switch (command) {
-            case CONNECT, STOMP -> accessor.setUser(authenticate(accessor));
+            case CONNECT, STOMP -> {
+                Authentication authentication = authenticate(accessor);
+                lifetime.authenticate(accessor.getSessionId(), ((JwtAuthenticationToken) authentication).getToken());
+                accessor.setUser(authentication);
+            }
             case SUBSCRIBE -> {
                 requireAuthenticated(accessor);
                 requireDestination(accessor, PUBLIC_TOPIC::equals);
@@ -74,6 +82,9 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
             throw new BadCredentialsException("Missing bearer token");
         }
         String token = header.substring(BEARER_PREFIX.length()).trim();
+        if (token.isEmpty()) {
+            throw new BadCredentialsException("Missing bearer token");
+        }
         // Verifies signature, expiry and issuer; throws an AuthenticationException when invalid.
         return jwtAuthenticationProvider.authenticate(new BearerTokenAuthenticationToken(token));
     }

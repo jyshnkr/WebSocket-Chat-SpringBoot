@@ -1,7 +1,9 @@
 package com.ADPFProject.SpringBoot.WebSocketChatApplication.security;
 
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.util.Base64;
+import java.util.List;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -14,6 +16,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtIssuerValidator;
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
@@ -29,6 +33,11 @@ public class JwtConfig {
 
     /** HS256 requires a key of at least 256 bits. */
     static final int MIN_KEY_BYTES = 32;
+
+    @Bean
+    Clock securityClock() {
+        return Clock.systemUTC();
+    }
 
     @Bean
     SecretKey jwtSigningKey(JwtProperties properties) {
@@ -58,12 +67,15 @@ public class JwtConfig {
     }
 
     @Bean
-    JwtDecoder jwtDecoder(SecretKey jwtSigningKey, JwtProperties properties) {
+    JwtDecoder jwtDecoder(SecretKey jwtSigningKey, JwtProperties properties,
+                          Clock clock, JwtLifetimePolicy lifetimePolicy) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(jwtSigningKey)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
-        // Signature is checked by the decoder; this adds exp/nbf (with clock skew) and issuer checks.
-        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(properties.issuer()));
+        JwtTimestampValidator timestamps = new JwtTimestampValidator(JwtLifetimePolicy.CLOCK_SKEW);
+        timestamps.setClock(clock);
+        decoder.setJwtValidator(JwtValidators.createDefaultWithValidators(
+                List.of(timestamps, new JwtIssuerValidator(properties.issuer()), lifetimePolicy)));
         return decoder;
     }
 }

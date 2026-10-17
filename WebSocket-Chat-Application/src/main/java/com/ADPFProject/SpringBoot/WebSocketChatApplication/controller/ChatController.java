@@ -3,6 +3,9 @@ package com.ADPFProject.SpringBoot.WebSocketChatApplication.controller;
 import java.security.Principal;
 
 import com.ADPFProject.SpringBoot.WebSocketChatApplication.model.ChatMessage;
+import com.ADPFProject.SpringBoot.WebSocketChatApplication.presence.ActiveUserRegistry;
+import com.ADPFProject.SpringBoot.WebSocketChatApplication.security.WebSocketSessionLifetime;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
@@ -12,6 +15,14 @@ import org.springframework.stereotype.Controller;
 public class ChatController {
 
     static final int MAX_CONTENT_LENGTH = 1000;
+
+    private final ActiveUserRegistry activeUsers;
+    private final WebSocketSessionLifetime lifetime;
+
+    public ChatController(ActiveUserRegistry activeUsers, WebSocketSessionLifetime lifetime) {
+        this.activeUsers = activeUsers;
+        this.lifetime = lifetime;
+    }
 
     @MessageMapping("/chat.sendMessage")
     @SendTo("/topic/public")
@@ -25,9 +36,8 @@ public class ChatController {
     }
 
     @MessageMapping("/chat.addUser")
-    @SendTo("/topic/public")
-    public ChatMessage addUser(Principal principal) {
-        return ChatMessage.of(ChatMessage.MessageType.JOIN, principal.getName(), null);
+    public void addUser(Principal principal, @Header("simpSessionId") String sessionId) {
+        activeUsers.join(sessionId, principal.getName(), () -> lifetime.isActive(sessionId));
     }
 
 }

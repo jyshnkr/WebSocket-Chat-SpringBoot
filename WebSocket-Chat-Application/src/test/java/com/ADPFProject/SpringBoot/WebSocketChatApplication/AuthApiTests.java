@@ -13,12 +13,15 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import javax.crypto.spec.SecretKeySpec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -82,6 +85,38 @@ class AuthApiTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.username").exists())
                 .andExpect(jsonPath("$.errors.password").exists());
+    }
+
+    @ParameterizedTest
+    @MethodSource("passwordsAt72Utf8Bytes")
+    void registerAndLoginAcceptPasswordAt72Utf8Bytes(String password) throws Exception {
+        String username = uniqueUsername();
+
+        register(username, password)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.username").value(username));
+
+        login(username, password)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.accessToken").isNotEmpty());
+    }
+
+    @ParameterizedTest
+    @MethodSource("passwordsExceeding72Utf8Bytes")
+    void registerRejectsPasswordExceeding72Utf8BytesWithoutCreatingAccount(String password) throws Exception {
+        String username = uniqueUsername();
+
+        register(username, password)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Request validation failed"))
+                .andExpect(jsonPath("$.errors.password").value("must be at most 72 UTF-8 bytes"));
+
+        login(username, password)
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.detail").value("Invalid username or password"))
+                .andExpect(jsonPath("$.accessToken").doesNotExist());
+        register(username, PASSWORD).andExpect(status().isCreated());
     }
 
     @Test
@@ -164,6 +199,14 @@ class AuthApiTests {
         mvc.perform(get("/api/admin/active-users").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
+    }
+
+    private static Stream<String> passwordsAt72Utf8Bytes() {
+        return Stream.of("a".repeat(72), "é".repeat(36), "😀".repeat(18));
+    }
+
+    private static Stream<String> passwordsExceeding72Utf8Bytes() {
+        return Stream.of("a".repeat(73), "é".repeat(37), "😀".repeat(19));
     }
 
     private ResultActions register(String username, String password) throws Exception {
